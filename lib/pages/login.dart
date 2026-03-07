@@ -13,12 +13,17 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Container(
-      child: Form(
-        child: Column( children: [
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+    return Scaffold(body: Form(
+      child: Column( children: [
+        SizedBox(
+          width: screenWidth * 0.35,   // 70% de la largeur
+          height: screenHeight * 0.35, // 70% de la hauteur
+          child: Image.asset('assets/images/OpenMindsLogo.png'),
+        )
 
-        ],)
-      )
+      ],)
     )
 
     );
