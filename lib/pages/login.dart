@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter/animation.dart";
+import "package:openminds/constants/colors.dart";
 
 class Login extends StatefulWidget {
   @override
@@ -15,17 +16,20 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    return Scaffold(body: Form(
-      child: Column( children: [
-        SizedBox(
-          width: screenWidth * 0.35,   // 70% de la largeur
-          height: screenHeight * 0.35, // 70% de la hauteur
-          child: Image.asset('assets/images/OpenMindsLogo.png'),
-        )
+    return Scaffold(
+      appBar: AppBar(
 
-      ],)
-    )
+      ),
+      body: Form(
+        child: Column( children: [
+          SizedBox(
+            width: screenWidth * 0.35,   // 70% de la largeur
+            height: screenHeight * 0.35, // 70% de la hauteur
+            child: Image.asset('assets/images/OpenMindsLogo.png'),
+          )
 
+        ],)
+      )
     );
   }
 }
