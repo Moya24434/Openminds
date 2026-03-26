@@ -1,19 +1,28 @@
 class Session {
-  final int id;
-  final String titre;
+  final int idSession;
+  final int idFormation;
+  final String typeSession;  // "Présentiel" ou "En ligne"
   final String adresse;
-  final String date;
-  final String description;
+  final DateTime dateDebut;
+  final DateTime dateFin;
 
-  Session({required this.id, required this.titre, required this.adresse, required this.date, required this.description});
+  Session({
+    required this.idSession,
+    required this.idFormation,
+    required this.typeSession,
+    required this.adresse,
+    required this.dateDebut,
+    required this.dateFin
+  });
 
   factory Session.fromJson(Map<String, dynamic> json) {
     return Session(
-      id: int.parse(json['id_session'].toString()),
-      titre: json['titre'] ?? "Formation",
+      idSession: int.parse(json['id_session'].toString()),
+      idFormation: int.parse(json['id_formation'].toString()),
+      typeSession: json['type_session'] ?? "Session",
       adresse: json['lieu'] ?? "Lieu non défini",
-      date: json['date_session'] ?? "",
-      description: json['description'] ?? "",
+      dateDebut: DateTime.parse(json['dateDebut']),
+      dateFin: DateTime.parse(json['dateFin']),
     );
   }
 }
