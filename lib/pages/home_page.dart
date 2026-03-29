@@ -27,31 +27,39 @@ class _HomePageState extends State<HomePage> {
         future: _sessionService.getSessions(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF004AAD)));
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Erreur : ${snapshot.error}"));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Aucune formation disponible"));
+            return const Center(child: Text("Aucune session disponible"));
           }
 
-          final session = snapshot.data![0]; // On affiche la première pour le test
+          final session = snapshot.data![0];
 
           return Column(
             children: [
               const SizedBox(height: 20),
-              Expanded(child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildFormationCard(session),
-              )),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildFormationCard(session),
+                ),
+              ),
               _buildActionButtons(),
             ],
           );
         },
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildFormationCard(Session session) {
+    // On sécurise le titre au cas où l'objet Formation serait null
+    String titreAffiche = session.formation?.titre ?? "Formation inconnue";
+    String dateAffichee = "${session.dateSession.day}/${session.dateSession.month}/${session.dateSession.year}";
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -63,29 +71,31 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // IMAGE AVEC TAILLE FIXE POUR ÉVITER L'ERREUR ROUGE
             SizedBox(
               height: 220,
               child: Image.network(
-                'https://via.placeholder.com/400x250',
+                // On utilise l'image de la BDD. Si elle n'existe pas, on met une image par défaut
+                session.formation?.imageUrl ?? 'https://via.placeholder.com/400x250?text=Pas+d+image',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey[200],
                   child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
                 ),
-              ),
+              )
             ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(session.titre, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF004AAD))),
+                  Text(
+                      titreAffiche,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF004AAD))
+                  ),
                   const SizedBox(height: 10),
                   Text(session.adresse, style: const TextStyle(fontSize: 16)),
-                  Text("Le ${session.date}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 15),
-                  Text(session.description, style: const TextStyle(color: Colors.grey), maxLines: 4, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 5),
+                  Text("Le $dateAffichee", style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
             )
@@ -112,25 +122,12 @@ class _HomePageState extends State<HomePage> {
   Widget _buildActionButton(IconData icon, Color color, {bool isBig = false}) {
     return Container(
       padding: EdgeInsets.all(isBig ? 20 : 15),
-      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)]),
-      child: Icon(icon, color: color, size: isBig ? 35 : 30),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(20)), color: Color(0xFF004AAD)),
-      child: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Pour Moi'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Mon Profil'),
-        ],
+      decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)]
       ),
+      child: Icon(icon, color: color, size: isBig ? 35 : 30),
     );
   }
 }

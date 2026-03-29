@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/formation_model.dart';
 
@@ -19,6 +20,31 @@ class FormationService {
       }
     } else {
       throw Exception('Erreur serveur : ${response.statusCode}');
+    }
+  }
+  // --- NOUVELLE MÉTHODE : CRÉER UNE FORMATION (Admin) ---
+  Future<Map<String, dynamic>> createFormation(Map<String, String> data, {File? imageFile}) async {
+    try {
+      var uri = Uri.parse("$baseUrl/create_formation.php");
+      var request = http.MultipartRequest('POST', uri);
+
+      request.fields.addAll(data);
+
+      if (imageFile != null) {
+        var multipartFile = await http.MultipartFile.fromPath(
+          'image', // Doit correspondre au $_FILES['image'] en PHP
+          imageFile.path,
+        );
+        request.files.add(multipartFile);
+      }
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+      return json.decode(responseData);
+
+    } catch (e) {
+      print("Erreur création formation : $e");
+      return {"status": "error", "message": "Erreur de connexion"};
     }
   }
 }

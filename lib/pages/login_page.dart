@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
+import '../services/user_prefs.dart';
+import 'main_screen.dart';
 import 'register_page.dart';
 import 'home_page.dart';
 
@@ -16,6 +18,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
 
+  // Dans login_page.dart, modifie handleLogin :
+
   void handleLogin() async {
     setState(() => isLoading = true);
 
@@ -27,38 +31,19 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = false);
 
     if (user != null) {
-      // 1. Message de bienvenue
+      // --- ON SAUVEGARDE ICI ---
+      await UserPrefs.saveUser(user);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Bienvenue ${user.prenom} !"),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 0), // Message court pour ne pas bloquer l'écran
-        ),
+        SnackBar(content: Text("Bienvenue ${user.prenom} !"), backgroundColor: Colors.green),
       );
 
-      // 2. Transition fluide vers la HomePage
       Navigator.pushReplacement(
         context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const HomePage(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // Animation de fondu (Fade)
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 800), // 0.8 seconde pour la douceur
-        ),
+        MaterialPageRoute(builder: (context) => const MainScreen()),
       );
     } else {
-      // Cas d'échec
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Email ou mot de passe incorrect"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Erreur...
     }
   }
 

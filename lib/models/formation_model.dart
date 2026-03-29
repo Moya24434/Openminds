@@ -1,34 +1,25 @@
 class Formation {
-  final int id;
+  final int idFormation;
   final String titre;
-  final String adresse;
-  final DateTime dateDebut;
-  final DateTime dateFin;
   final String description;
-  final String thematique;
-  final String? image;
+  final String? thematique;
+  final String? imageUrl; // 1. On déclare la variable ici (avec un ? car elle peut être nulle)
 
   Formation({
-    required this.id,
+    required this.idFormation,
     required this.titre,
-    required this.adresse,
-    required this.dateDebut,
-    required this.dateFin,
     required this.description,
-    required this.thematique,
-    this.image,
+    this.thematique,
+    this.imageUrl, // 2. On l'ajoute au constructeur
   });
 
   factory Formation.fromJson(Map<String, dynamic> json) {
     return Formation(
-      id: int.parse(json['id_formation'].toString()),
-      titre: json['titre'] ?? "Formation",
-      description: json['description'] ?? "",
-      thematique: json['thematique'] ?? "",
-      adresse: json['adresse'] ?? "",
-      dateDebut: DateTime.parse(json['dateDebut']),
-      dateFin: DateTime.parse(json['dateFin']),// ← parser en DateTime
-      // image non lue depuis le JSON car non présente en BD
+      idFormation: int.parse(json['id_formation'].toString()),
+      titre: json['titre'] ?? "Formation sans titre",
+      description: json['description'] ?? "Pas de description",
+      thematique: json['thematique'],
+      imageUrl: json['image_url'], // 3. On fait le lien avec le nom exact renvoyé par le PHP
     );
   }
 }

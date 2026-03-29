@@ -8,68 +8,73 @@ DROP TABLE IF EXISTS Sessions;
 DROP TABLE IF EXISTS Utilisateurs;
 DROP TABLE IF EXISTS Formations;
 
--- 1. Table Utilisateurs (Inchangée, très bien définie)
--- Version compatible MySQL / MariaDB
-CREATE TABLE Utilisateurs (
-    id_user INT PRIMARY KEY AUTO_INCREMENT,
-    nom VARCHAR(100) NOT NULL,
-    prenom VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    ville VARCHAR(100),
-    code_postal VARCHAR(10),
-    telephone VARCHAR(20),
-    role ENUM('Bénévole', 'Administrateur') DEFAULT 'Bénévole'
-);
--- 2. Table Formations
-CREATE TABLE Formations (
-    id_formation INT PRIMARY KEY AUTO_INCREMENT,
-    titre VARCHAR(255) NOT NULL,
-    description TEXT,
-    thematique VARCHAR(100)
-);
--- 3. Table Quiz (NÉCESSAIRE pour la table Resultats)
-CREATE TABLE Quiz (
-    id_quiz INT PRIMARY KEY AUTO_INCREMENT,
-    id_formation INT,
-    titre VARCHAR(255) NOT NULL,
-    seuil_reussite INT DEFAULT 10,
-    CONSTRAINT fk_quiz_formation FOREIGN KEY (id_formation) 
-        REFERENCES Formations(id_formation) ON DELETE CASCADE
-);
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Hôte : 127.0.0.1
+-- Généré le : dim. 29 mars 2026 à 20:05
+-- Version du serveur : 10.4.32-MariaDB
+-- Version de PHP : 8.2.12
 
--- 4. Table Sessions
-CREATE TABLE Sessions (
-    id_session INT PRIMARY KEY AUTO_INCREMENT,
-    id_formation INT,
-    date_session DATETIME NOT NULL,
-    type_session ENUM('Présentiel', 'En ligne'),
-    lieu VARCHAR(255),
-    CONSTRAINT fk_session_formation FOREIGN KEY (id_formation) 
-        REFERENCES Formations(id_formation) ON DELETE CASCADE
-);
--- 5. Table Inscriptions (Lien entre Utilisateurs et Sessions)
--- Essentiel pour savoir qui participe à quoi !
-CREATE TABLE Inscriptions (
-    id_user INTEGER,
-    id_session INTEGER,
-    date_inscription DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_user, id_session),
-    FOREIGN KEY (id_user) REFERENCES Utilisateurs(id_user) ON DELETE CASCADE,
-    FOREIGN KEY (id_session) REFERENCES Sessions(id_session) ON DELETE CASCADE
-);
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
 
--- 6. Table Resultats (Version MySQL)
-CREATE TABLE Resultats (
-    id_res INT PRIMARY KEY AUTO_INCREMENT,
-    id_user INT,
-    id_quiz INT,
-    score INT NOT NULL,
-    date_passage DATETIME DEFAULT CURRENT_TIMESTAMP,
-    est_valide TINYINT(1) DEFAULT 0, -- 0 pour faux, 1 pour vrai
-    CONSTRAINT fk_res_user FOREIGN KEY (id_user) 
-        REFERENCES Utilisateurs(id_user) ON DELETE CASCADE,
-    CONSTRAINT fk_res_quiz FOREIGN KEY (id_quiz) 
-        REFERENCES Quiz(id_quiz) ON DELETE CASCADE
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de données : `open_minds`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `formations`
+--
+
+CREATE TABLE `formations` (
+  `id_formation` int(11) NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `thematique` varchar(100) DEFAULT NULL,
+  `image_url` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `formations`
+--
+
+INSERT INTO `formations` (`id_formation`, `titre`, `description`, `thematique`, `image_url`) VALUES
+(1, 'Formation au PSC1', 'Soyez prêt à agir en cas d\'urgence ! Participez à notre formation PSC1 (Prévention et Secours Civiques de niveau 1) et apprenez les gestes essentiels pour sauver des vies.', 'Secourisme', 'https://via.placeholder.com/400x250/FF5733/FFFFFF?text=PSC1'),
+(2, 'Initiation au Bénévolat', 'Découvrez les bases de l\'engagement associatif, vos droits, vos devoirs et comment vous rendre utile dans votre communauté locale.', 'Engagement', 'https://via.placeholder.com/400x250/33C1FF/FFFFFF?text=Bénévolat'),
+(3, 'Soutien Scolaire', 'Apprenez les bonnes pratiques et la pédagogie pour accompagner les enfants en difficulté scolaire après l\'école.', 'Éducation', 'https://via.placeholder.com/400x250/28B463/FFFFFF?text=Soutien+Scolaire');
+
+--
+-- Index pour les tables déchargées
+--
+
+--
+-- Index pour la table `formations`
+--
+ALTER TABLE `formations`
+  ADD PRIMARY KEY (`id_formation`);
+
+--
+-- AUTO_INCREMENT pour les tables déchargées
+--
+
+--
+-- AUTO_INCREMENT pour la table `formations`
+--
+ALTER TABLE `formations`
+  MODIFY `id_formation` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

@@ -38,7 +38,8 @@ class _FormationsPageState extends State<FormationsPage> {
                 final formation = formations[index];
                 return ListTile(
                   title: Text(formation.titre),
-                  subtitle: Text(formation.thematique),
+                  subtitle: Text(formation.thematique ?? 'Aucune thématique'),
+                  leading: const Icon(Icons.menu_book, color: Color(0xFF004AAD)), // Un petit icône pour faire joli
                 );
               },
             );
