@@ -58,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.favorite), // Icône pleine quand sélectionné
                   activeIcon: Icon(Icons.favorite),
-                  label: 'Pour Moi'
+                  label: 'Accueil'
               ),
               BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),

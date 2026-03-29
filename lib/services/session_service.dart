@@ -6,11 +6,20 @@ class SessionService {
   // 1. On définit UNE SEULE FOIS l'adresse de base du dossier API (sans nom de fichier à la fin)
   static const String baseUrl = "http://10.0.2.2/openminds_api";
 
-  // --- RÉCUPÉRER TOUTES LES SESSIONS ---
-  Future<List<Session>> getSessions() async {
+
+  // --- RÉCUPÉRER TOUTES LES SESSIONS (AVEC OU SANS GPS) ---
+  // On ajoute les { } pour rendre les paramètres optionnels
+  Future<List<Session>> getSessions({double? lat, double? lng}) async {
     try {
-      // 2. On utilise $baseUrl et on rajoute le nom du fichier
-      final response = await http.get(Uri.parse("$baseUrl/get_sessions.php"));
+      // Ton adresse de base (utilise get_sessions.php si tu as mis le code PHP dedans)
+      String requestUrl = "$baseUrl/get_sessions.php";
+
+      // Si le téléphone a envoyé ses coordonnées, on les colle à l'URL !
+      if (lat != null && lng != null) {
+        requestUrl += "?lat=$lat&lng=$lng";
+      }
+
+      final response = await http.get(Uri.parse(requestUrl));
 
       if (response.statusCode == 200) {
         final List data = json.decode(response.body);
