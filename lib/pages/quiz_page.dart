@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/quiz_model.dart';
 
@@ -48,13 +49,15 @@ class _QuizPageState extends State<QuizPage> {
   void _answerQuestion(bool isCorrect) {
     if (isCorrect) _score++;
 
-    setState(() {
-      if (_currentIndex < _questions.length - 1) {
+    if (_currentIndex < _questions.length - 1) {
+      setState(() {
         _currentIndex++;
-      } else {
-        _showResult();
-      }
-    });
+      });
+    } else {
+      // C'est la dernière question !
+      _envoiScoreServeur();
+      _showResult();
+    }
   }
 
   void _showResult() {
@@ -221,4 +224,30 @@ class _QuizPageState extends State<QuizPage> {
       ),
     );
   }
+  Future<void> _envoiScoreServeur() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      int? userId = prefs.getInt('id_user');
+
+      if (userId == null) return;
+
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2/openminds_api/save_quiz_result.php"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "id_user": userId,
+          "id_formation": widget.idFormation,
+          "score": _score,
+          "total": _questions.length,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint("Score enregistré avec succès !");
+      }
+    } catch (e) {
+      debugPrint("Erreur lors de l'envoi du score : $e");
+    }
+  }
+
 }

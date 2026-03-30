@@ -32,6 +32,7 @@ class SessionService {
     }
   }
 
+
   // --- S'INSCRIRE À UNE SESSION ---
   Future<Map<String, dynamic>> inscrireSession(int idUser, int idSession) async {
     try {
@@ -83,6 +84,18 @@ class SessionService {
     } catch (e) {
       print("Erreur réseau (getUserSessions) : $e");
       return [];
+    }
+  }
+
+  Future<List<dynamic>> getUserHistory(int userId) async {
+    final response = await http.get(
+      Uri.parse("http://10.0.2.2/openminds_api/get_user_history.php?id_user=$userId"),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Erreur lors de la récupération de l'historique");
     }
   }
 }

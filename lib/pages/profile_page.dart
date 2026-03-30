@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:openminds/pages/security_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'my_session_page.dart';
+import 'history_page.dart'; // N'oublie pas de créer ce fichier
 import '../services/session_service.dart';
 import 'login_page.dart';
-
+import 'notfication_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -17,13 +19,14 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final String apiBaseUrl = "http://10.0.2.2/openminds_api"; // Adresse émulateur
+  final String apiBaseUrl = "http://10.0.2.2/openminds_api";
 
   String prenom = "Chargement...";
   String imageUrl = "";
   int upcomingCount = 0;
+  int completedCount = 0; // CORRECTION : Déclaré ici pour être accessible partout
   bool isLoading = true;
-  bool _isPickingImage = false; // Verrou pour l'image picker
+  bool _isPickingImage = false;
 
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
@@ -41,13 +44,20 @@ class _ProfilePageState extends State<ProfilePage> {
     String savedPrenom = prefs.getString('prenom') ?? "Utilisateur";
     String savedImage = prefs.getString('image_url') ?? '';
 
-    int fetchedCount = 0;
+    int fetchedUpcoming = 0;
+    int fetchedHistory = 0;
+
     if (userId != null) {
       try {
+        // Chargement des sessions à venir
         var mySessions = await SessionService().getUserSessions(userId);
-        fetchedCount = mySessions.length;
+        fetchedUpcoming = mySessions.length;
+
+        // Chargement de l'historique (Réalisées)
+        var history = await SessionService().getUserHistory(userId);
+        fetchedHistory = history.length;
       } catch (e) {
-        debugPrint("Erreur sessions: $e");
+        debugPrint("Erreur lors du chargement des données: $e");
       }
     }
 
@@ -55,7 +65,8 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         prenom = savedPrenom;
         imageUrl = savedImage;
-        upcomingCount = fetchedCount;
+        upcomingCount = fetchedUpcoming;
+        completedCount = fetchedHistory;
         isLoading = false;
       });
     }
@@ -64,13 +75,11 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _pickImage(StateSetter setModalState) async {
     if (_isPickingImage) return;
     _isPickingImage = true;
-
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 40, // Compression pour éviter les lourdeurs PHP
+        imageQuality: 40,
       );
-
       if (pickedFile != null) {
         setModalState(() {
           _selectedImage = File(pickedFile.path);
@@ -88,79 +97,67 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-          builder: (context, setModalState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text("Modifier mon profil", style: TextStyle(color: Color(0xFF004AAD))),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _pickImage(setModalState),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey[200],
-                        // Logique d'affichage d'image sécurisée
-                        backgroundImage: _selectedImage != null
-                            ? FileImage(_selectedImage!)
-                            : (imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null) as ImageProvider?,
-                        child: (_selectedImage == null && imageUrl.isEmpty)
-                            ? const Icon(Icons.camera_alt, size: 30, color: Colors.grey)
-                            : null,
-                      ),
+        builder: (context, setModalState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text("Modifier mon profil", style: TextStyle(color: Color(0xFF004AAD))),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => _pickImage(setModalState),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: _selectedImage != null
+                          ? FileImage(_selectedImage!)
+                          : (imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null) as ImageProvider?,
+                      child: (_selectedImage == null && imageUrl.isEmpty)
+                          ? const Icon(Icons.camera_alt, size: 30, color: Colors.grey)
+                          : null,
                     ),
-                    const SizedBox(height: 10),
-                    const Text("Cliquez pour changer la photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        labelText: "Prénom",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text("Cliquez pour changer la photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: "Prénom",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004AAD)),
-                  onPressed: () => _updateProfile(nameController.text),
-                  child: const Text("Enregistrer", style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            );
-          }
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004AAD)),
+                onPressed: () => _updateProfile(nameController.text),
+                child: const Text("Enregistrer", style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Future<void> _updateProfile(String nouveauPrenom) async {
-    print("--- DÉBUT DE LA MISE À JOUR ---");
     setState(() => isLoading = true);
-
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       int? userId = prefs.getInt('id_user');
-      print("ID Utilisateur récupéré : $userId"); // TRACE 1
 
-      if (userId == null) {
-        print("ERREUR : ID User est NULL !");
-        setState(() => isLoading = false);
-        return;
-      }
+      if (userId == null) return;
 
       String base64Image = "";
       if (_selectedImage != null) {
-        print("Image détectée, conversion en Base64..."); // TRACE 2
         List<int> imageBytes = await _selectedImage!.readAsBytes();
         base64Image = base64Encode(imageBytes);
-        print("Conversion terminée (Taille : ${base64Image.length} caractères)");
       }
-
-      print("Envoi de la requête à l'URL : $apiBaseUrl/update_profile.php"); // TRACE 3
 
       final response = await http.post(
         Uri.parse("$apiBaseUrl/update_profile.php"),
@@ -172,30 +169,19 @@ class _ProfilePageState extends State<ProfilePage> {
         }),
       ).timeout(const Duration(seconds: 15));
 
-      print("--- RÉPONSE REÇUE ---"); // TRACE 4
-      print("Statut : ${response.statusCode}");
-      print("Corps : ${response.body}");
-
-      if (response.body.startsWith('<')) {
-        throw "Le serveur a renvoyé du HTML (Erreur PHP probable).";
-      }
-
       final result = jsonDecode(response.body);
 
       if (result['status'] == 'success') {
-        print("SUCCÈS : Mise à jour BDD OK");
         await prefs.setString('prenom', nouveauPrenom);
         if (result['new_url'] != null && result['new_url'] != "") {
           await prefs.setString('image_url', result['new_url']);
         }
-        Navigator.pop(context); // On ferme le modal seulement si ça marche
+        if (mounted) Navigator.pop(context);
         _loadProfileData();
       } else {
-        print("ERREUR SERVEUR : ${result['message']}");
         throw result['message'] ?? "Erreur inconnue";
       }
     } catch (e) {
-      print("CATCH ERREUR : $e"); // TRACE FINALE
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red),
       );
@@ -203,7 +189,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // --- NOUVEAU : Fonction pour gérer la suppression du compte RGPD ---
   void _afficherPopupSuppression(BuildContext context) {
     showDialog(
       context: context,
@@ -212,25 +197,17 @@ class _ProfilePageState extends State<ProfilePage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Droit à l'oubli", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           content: const Text(
-            "Conformément au RGPD, vous êtes sur le point d'exercer votre droit à l'oubli.\n\n"
-                "Êtes-vous sûr de vouloir supprimer définitivement votre compte ? "
-                "Cette action est irréversible. Toutes vos données personnelles, historiques et résultats seront effacés de nos serveurs.",
+            "Êtes-vous sûr de vouloir supprimer définitivement votre compte ? Cette action est irréversible.",
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(), // Ferme le pop-up
-              child: const Text("Annuler", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text("Annuler")),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Ferme le pop-up avant de commencer
-                await _supprimerCompteDefinitivement();
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _supprimerCompteDefinitivement();
               },
-              child: const Text("Oui, supprimer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text("Oui, supprimer", style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -238,54 +215,33 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Fonction qui contacte le serveur pour effacer les données
   Future<void> _supprimerCompteDefinitivement() async {
     setState(() => isLoading = true);
-
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       int? userId = prefs.getInt('id_user');
+      if (userId == null) return;
 
-      if (userId == null) throw "Erreur : Utilisateur introuvable.";
-
-      // On envoie l'ordre de destruction à l'API PHP
       final response = await http.post(
-        Uri.parse("$apiBaseUrl/delete_account.php"), // Le fichier qu'on va créer à l'étape 2 !
+        Uri.parse("$apiBaseUrl/delete_account.php"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"id_user": userId}),
-      ).timeout(const Duration(seconds: 15));
+      );
 
       final result = jsonDecode(response.body);
-
       if (result['status'] == 'success') {
-        // 1. On vide la mémoire du téléphone
         await prefs.clear();
-
         if (!mounted) return;
-
-        // 2. Message d'adieu
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Votre compte a été supprimé avec succès."), backgroundColor: Colors.green),
-        );
-
-        // 3. La redirection absolue (détruit l'historique et renvoie au Login)
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
-              (Route<dynamic> route) => false, // Le "false" détruit toutes les pages précédentes
+              (route) => false,
         );
-      } else {
-        throw result['message'] ?? "Erreur lors de la suppression.";
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red),
-      );
       setState(() => isLoading = false);
     }
   }
-  // --- FIN DU NOUVEAU BLOC ---
 
   @override
   Widget build(BuildContext context) {
@@ -314,17 +270,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFF004AAD).withOpacity(0.3), width: 3)
-                        ),
+                            border: Border.all(color: const Color(0xFF004AAD).withOpacity(0.3), width: 3)),
                         child: CircleAvatar(
                           radius: 60,
                           backgroundColor: Colors.white,
-                          backgroundImage: imageUrl.isNotEmpty
-                              ? NetworkImage(imageUrl)
-                              : null,
-                          child: imageUrl.isEmpty
-                              ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                              : null,
+                          backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                          child: imageUrl.isEmpty ? const Icon(Icons.person, size: 60, color: Colors.grey) : null,
                         ),
                       ),
                       Positioned(
@@ -347,7 +298,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 35),
                 Row(
                   children: [
-                    _buildStatButton(title: "Réalisées", count: "3", icon: Icons.check_circle_outline, onTap: () {}),
+                    _buildStatButton(
+                        title: "Réalisées",
+                        count: completedCount.toString(),
+                        icon: Icons.check_circle_outline,
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryPage()));
+                        }),
                     const SizedBox(width: 15),
                     _buildStatButton(
                       title: "À Venir",
@@ -372,39 +329,41 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))]
-      ),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))]),
       child: Column(
         children: [
-          _buildSettingTile(Icons.lock_outline, "Sécurité", "Mot De Passe..."),
-          const Divider(height: 1, indent: 60),
-          _buildSettingTile(Icons.notifications_outlined, "Notifications", "Gérer les alertes"),
-          const Divider(height: 1, indent: 60),
-
-          // --- LE NOUVEAU BOUTON RGPD ---
+          _buildSettingTile(Icons.lock_outline, "Sécurité", "Mot De Passe...", onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const SecurityPage()));
+          }),
+          const Divider(height: 1, indent: 60,endIndent: 20),
+          _buildSettingTile(Icons.notifications_outlined, "Notifications", "Gérer les alertes", onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsSettingsPage()));
+          }),
+          const Divider(height: 1, indent: 60,endIndent: 20),
           ListTile(
             leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.delete_forever, color: Colors.red) // Icône poubelle
-            ),
+                child: const Icon(Icons.delete_forever, color: Colors.red)),
             title: const Text("Supprimer mon compte", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             onTap: () => _afficherPopupSuppression(context),
           ),
-          const Divider(height: 1, indent: 60),
-          // --------------------------------
-
+          const Divider(height: 1, indent: 60,endIndent: 20),
           ListTile(
             leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.logout, color: Colors.red)
-            ),
+                child: const Icon(Icons.logout, color: Colors.red)),
             title: const Text("Déconnexion", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             onTap: () async {
               SharedPreferences prefs = await SharedPreferences.getInstance();
               await prefs.clear();
-              if (mounted) Navigator.pushReplacementNamed(context, '/login');
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (route) => false,
+              );
             },
           ),
         ],
@@ -435,16 +394,20 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildSettingTile(IconData icon, String title, String subtitle) {
+  Widget _buildSettingTile(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
     return ListTile(
+      onTap: onTap, // On lie l'action ici
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: const Color(0xFF004AAD).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+            color: const Color(0xFF004AAD).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10)
+        ),
         child: Icon(icon, color: const Color(0xFF004AAD)),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(Icons.chevron_right, size: 20),
     );
   }
 }
