@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'my_session_page.dart';
 import '../services/session_service.dart';
+import 'login_page.dart';
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -201,6 +203,90 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // --- NOUVEAU : Fonction pour gérer la suppression du compte RGPD ---
+  void _afficherPopupSuppression(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Droit à l'oubli", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          content: const Text(
+            "Conformément au RGPD, vous êtes sur le point d'exercer votre droit à l'oubli.\n\n"
+                "Êtes-vous sûr de vouloir supprimer définitivement votre compte ? "
+                "Cette action est irréversible. Toutes vos données personnelles, historiques et résultats seront effacés de nos serveurs.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Ferme le pop-up
+              child: const Text("Annuler", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Ferme le pop-up avant de commencer
+                await _supprimerCompteDefinitivement();
+              },
+              child: const Text("Oui, supprimer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Fonction qui contacte le serveur pour effacer les données
+  Future<void> _supprimerCompteDefinitivement() async {
+    setState(() => isLoading = true);
+
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      int? userId = prefs.getInt('id_user');
+
+      if (userId == null) throw "Erreur : Utilisateur introuvable.";
+
+      // On envoie l'ordre de destruction à l'API PHP
+      final response = await http.post(
+        Uri.parse("$apiBaseUrl/delete_account.php"), // Le fichier qu'on va créer à l'étape 2 !
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"id_user": userId}),
+      ).timeout(const Duration(seconds: 15));
+
+      final result = jsonDecode(response.body);
+
+      if (result['status'] == 'success') {
+        // 1. On vide la mémoire du téléphone
+        await prefs.clear();
+
+        if (!mounted) return;
+
+        // 2. Message d'adieu
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Votre compte a été supprimé avec succès."), backgroundColor: Colors.green),
+        );
+
+        // 3. La redirection absolue (détruit l'historique et renvoie au Login)
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+              (Route<dynamic> route) => false, // Le "false" détruit toutes les pages précédentes
+        );
+      } else {
+        throw result['message'] ?? "Erreur lors de la suppression.";
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red),
+      );
+      setState(() => isLoading = false);
+    }
+  }
+  // --- FIN DU NOUVEAU BLOC ---
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -294,6 +380,20 @@ class _ProfilePageState extends State<ProfilePage> {
           const Divider(height: 1, indent: 60),
           _buildSettingTile(Icons.notifications_outlined, "Notifications", "Gérer les alertes"),
           const Divider(height: 1, indent: 60),
+
+          // --- LE NOUVEAU BOUTON RGPD ---
+          ListTile(
+            leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.delete_forever, color: Colors.red) // Icône poubelle
+            ),
+            title: const Text("Supprimer mon compte", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onTap: () => _afficherPopupSuppression(context),
+          ),
+          const Divider(height: 1, indent: 60),
+          // --------------------------------
+
           ListTile(
             leading: Container(
                 padding: const EdgeInsets.all(8),
