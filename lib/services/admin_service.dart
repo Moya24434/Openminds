@@ -149,4 +149,41 @@ class AdminService {
     final data = json.decode(response.body);
     return data['status'] == 'success';
   }
+
+  // ───────────── MÉTHODES SIMPLIFIÉES (utilisées par les pages admin) ─────────────
+
+  /// Récupère toutes les formations (pour les dropdowns et le catalogue admin)
+  Future<List<Formation>> getFormations() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/get_formations.php"),
+      );
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['status'] == 'success') {
+          return (jsonData['data'] as List)
+              .map((item) => Formation.fromJson(item))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Récupère les statistiques globales pour l'admin (US17)
+  Future<Map<String, dynamic>> getAdminStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/get_admin_stats.php"),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return {"status": "error", "message": "Erreur serveur"};
+    } catch (e) {
+      return {"status": "error", "message": "Erreur de connexion : $e"};
+    }
+  }
 }
