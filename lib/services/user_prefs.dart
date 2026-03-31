@@ -31,6 +31,11 @@ class UserPrefs {
     return prefs.getString('prenom') ?? '';
   }
 
+  static Future<String> getRole() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('role') ?? 'Bénévole';
+  }
+
   static Future<String> getImageUrl() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('image_url') ?? '';

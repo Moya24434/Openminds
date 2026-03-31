@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'home_page.dart'; // Ta page actuelle modifiée
 import 'profile_page.dart'; // Ajoute l'import en haut
 import 'search_page.dart';
+import '../services/user_prefs.dart';
+import 'admin/admin_dashboard_page.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -11,15 +13,32 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  // L'index de l'onglet actif (0 = Rechercher, 1 = Pour Moi, 2 = Profil)
+  // L'index de l'onglet actif (0 = Rechercher, 1 = Pour Moi, 2 = Profil, 3 = Admin)
   int _selectedIndex = 1; // On démarre sur "Pour Moi" par défaut
+  bool _isAdmin = false;
 
   // La liste des pages à afficher en fonction de l'onglet
-  final List<Widget> _pages = [
-    const SearchPage(), // <--- Remplace le Center() par ta nouvelle page
+  List<Widget> _pages = [
+    const SearchPage(),
     const HomePage(),
     const ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRole();
+  }
+
+  void _checkRole() async {
+    String role = await UserPrefs.getRole();
+    if (role == 'Administrateur') {
+      setState(() {
+        _isAdmin = true;
+        _pages.add(const AdminDashboardPage());
+      });
+    }
+  }
 
   // Fonction appelée quand on clique sur un onglet
   void _onItemTapped(int index) {
@@ -50,21 +69,27 @@ class _MainScreenState extends State<MainScreen> {
             unselectedItemColor: Colors.white60,
             type: BottomNavigationBarType.fixed, // Empêche les icônes de bouger
             elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
+            items: [
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.search),
                   label: 'Rechercher'
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.favorite), // Icône pleine quand sélectionné
                   activeIcon: Icon(Icons.favorite),
                   label: 'Accueil'
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),
                   activeIcon: Icon(Icons.person),
                   label: 'Profil'
               ),
+              if (_isAdmin)
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.admin_panel_settings_outlined),
+                  activeIcon: Icon(Icons.admin_panel_settings),
+                  label: 'Admin',
+                ),
             ],
           ),
         ),
