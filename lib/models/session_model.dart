@@ -22,8 +22,8 @@ class Session {
   factory Session.fromJson(Map<String, dynamic> json) {
     return Session(
       idSession: int.parse(json['id_session'].toString()),
-      dateDebut: DateTime.parse(json['date_debut']),  // ← modifié
-      dateFin: DateTime.parse(json['date_fin']),       // ← nouveau
+      dateDebut: DateTime.parse(json['date_debut']),
+      dateFin: DateTime.parse(json['date_fin']),
       adresse: json['lieu'] ?? 'Adresse non précisée',
       typeSession: json['type_session'],
       formation: Formation.fromJson(json),
