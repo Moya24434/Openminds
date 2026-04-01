@@ -18,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   bool _isAdmin = false;
 
   // La liste des pages à afficher en fonction de l'onglet
-  List<Widget> _pages = [
+  final List<Widget> _pages = [
     const SearchPage(),
     const HomePage(),
     const ProfilePage(),

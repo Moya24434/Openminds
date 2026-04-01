@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/formation_model.dart';
 import '../../services/admin_service.dart';
 import '../../services/user_prefs.dart';
+import 'package:geocoding/geocoding.dart';
 
 class CreateSessionPage extends StatefulWidget {
   final Formation? preselectedFormation;
@@ -129,8 +130,10 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
   }
 
   Future<void> _submitSession() async {
+    // 1. Validation du formulaire (champs vides, etc.)
     if (!_formKey.currentState!.validate()) return;
 
+    // 2. Vérifications de sécurité (Formation et Dates)
     if (_selectedFormation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Veuillez sélectionner une formation"), backgroundColor: Colors.red),
@@ -148,6 +151,7 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
 
     setState(() => _isLoading = true);
 
+    // 3. Récupération de l'ID utilisateur
     final int? userId = await UserPrefs.getUserId();
     if (userId == null) {
       setState(() => _isLoading = false);
@@ -158,7 +162,34 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
       return;
     }
 
-    // Combiner date + heure pour début et fin
+    // --- ÉTAPE GEOCODING : Conversion Adresse -> Coordonnées ---
+    double latitude = 0.0;
+    double longitude = 0.0;
+
+    // On ne cherche les coordonnées que pour le Présentiel
+    if (_selectedType == 'Présentiel') {
+      try {
+        List<Location> locations = await locationFromAddress(_lieuController.text.trim());
+        if (locations.isNotEmpty) {
+          latitude = locations.first.latitude;
+          longitude = locations.first.longitude;
+        }
+      } catch (e) {
+        // Si l'adresse est invalide ou introuvable
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("📍 Adresse introuvable. Soyez plus précis (n°, rue, ville)."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return; // On arrête tout si on ne peut pas localiser le présentiel
+      }
+    }
+    print("DEBUG GPS -> Lat: $latitude, Lng: $longitude");
+
+    // 4. Combinaison des dates et heures
     final dateTimeDebut = DateTime(
       _selectedDateDebut!.year, _selectedDateDebut!.month, _selectedDateDebut!.day,
       _selectedTimeDebut!.hour, _selectedTimeDebut!.minute,
@@ -171,6 +202,7 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
     final formattedDebut = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTimeDebut);
     final formattedFin = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTimeFin);
 
+    // 5. Envoi final au Service Admin (avec Lat et Lng !)
     final bool success = await _adminService.createSession(
       userId,
       _selectedFormation!.idFormation,
@@ -178,6 +210,8 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
       _lieuController.text.trim(),
       formattedDebut,
       formattedFin,
+      latitude, // <--- Nouveau paramètre
+      longitude, // <--- Nouveau paramètre
     );
 
     setState(() => _isLoading = false);
@@ -191,7 +225,7 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur lors de la création"), backgroundColor: Colors.red),
+        const SnackBar(content: Text("Erreur lors de la création sur le serveur"), backgroundColor: Colors.red),
       );
     }
   }

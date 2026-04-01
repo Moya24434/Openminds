@@ -1,7 +1,6 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:openminds/pages/login_page.dart';
-import 'home_page.dart'; // Assure-toi que le chemin est correct
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

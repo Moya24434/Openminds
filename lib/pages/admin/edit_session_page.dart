@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/session_model.dart';
 import '../../services/admin_service.dart';
 import '../../services/user_prefs.dart';
+import 'package:geocoding/geocoding.dart';
 
 class EditSessionPage extends StatefulWidget {
   final Session session;
@@ -68,8 +69,9 @@ class _EditSessionPageState extends State<EditSessionPage> {
   }
 
   Future<void> _submitUpdate() async {
+    // 1. Validation du formulaire
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_selectedDateDebut == null || _selectedTimeDebut == null ||
         _selectedDateFin == null || _selectedTimeFin == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,20 +82,56 @@ class _EditSessionPageState extends State<EditSessionPage> {
 
     setState(() => _isLoading = true);
 
+    // 2. Récupération de l'ID Admin
     final int? userId = await UserPrefs.getUserId();
     if (userId == null) {
       setState(() => _isLoading = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Administrateur non identifié"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Administrateur non identifié"), backgroundColor: Colors.red)
+      );
       return;
     }
 
-    final dateTimeDebut = DateTime(_selectedDateDebut!.year, _selectedDateDebut!.month, _selectedDateDebut!.day, _selectedTimeDebut!.hour, _selectedTimeDebut!.minute);
-    final dateTimeFin = DateTime(_selectedDateFin!.year, _selectedDateFin!.month, _selectedDateFin!.day, _selectedTimeFin!.hour, _selectedTimeFin!.minute);
+    // --- ÉTAPE GEOCODING : Mise à jour des coordonnées ---
+    double latitude = 0.0;
+    double longitude = 0.0;
+
+    if (_selectedType == 'Présentiel') {
+      try {
+        // On transforme l'adresse (peut-être nouvelle) en coordonnées
+        List<Location> locations = await locationFromAddress(_lieuController.text.trim());
+        if (locations.isNotEmpty) {
+          latitude = locations.first.latitude;
+          longitude = locations.first.longitude;
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("📍 Impossible de localiser cette adresse. Vérifiez l'orthographe."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
+    // 3. Formatage des dates
+    final dateTimeDebut = DateTime(
+        _selectedDateDebut!.year, _selectedDateDebut!.month, _selectedDateDebut!.day,
+        _selectedTimeDebut!.hour, _selectedTimeDebut!.minute
+    );
+    final dateTimeFin = DateTime(
+        _selectedDateFin!.year, _selectedDateFin!.month, _selectedDateFin!.day,
+        _selectedTimeFin!.hour, _selectedTimeFin!.minute
+    );
 
     final formattedDebut = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTimeDebut);
     final formattedFin = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTimeFin);
 
+    // 4. Appel au service de mise à jour (avec les nouveaux paramètres Lat/Lng)
     final success = await _adminService.updateSession(
       userId,
       widget.session.idSession,
@@ -102,6 +140,8 @@ class _EditSessionPageState extends State<EditSessionPage> {
       _lieuController.text.trim(),
       formattedDebut,
       formattedFin,
+      latitude,  // Transmis au service
+      longitude, // Transmis au service
     );
 
     setState(() => _isLoading = false);
@@ -109,10 +149,14 @@ class _EditSessionPageState extends State<EditSessionPage> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Session modifiée avec succès"), backgroundColor: Colors.green));
-      Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Session modifiée avec succès"), backgroundColor: Colors.green)
+      );
+      Navigator.pop(context, true); // On renvoie true pour rafraîchir la liste précédente
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erreur lors de la modification"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Erreur lors de la modification"), backgroundColor: Colors.red)
+      );
     }
   }
 

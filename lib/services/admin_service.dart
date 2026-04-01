@@ -177,39 +177,80 @@ class AdminService {
     return [];
   }
 
-  Future<bool> createSession(int idUser, int idFormation, String typeSession, String lieu, String dateDebut, String dateFin) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/create_session.php"),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({
-        "id_user": idUser,
-        "id_formation": idFormation,
-        "type_session": typeSession,
-        "lieu": lieu,
-        "dateDebut": dateDebut,
-        "dateFin": dateFin,
-      }),
-    );
-    final data = json.decode(response.body);
-    return data['status'] == 'success';
+  Future<bool> createSession(
+      int idUser,
+      int idFormation,
+      String typeSession,
+      String lieu,
+      String dateDebut,
+      String dateFin,
+      double latitude, // Nouveau
+      double longitude // Nouveau
+      ) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/create_session.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "id_user": idUser,
+          "id_formation": idFormation,
+          "type_session": typeSession,
+          "lieu": lieu,
+          "dateDebut": dateDebut,
+          "dateFin": dateFin,
+          "latitude": latitude,   // Envoyé au PHP
+          "longitude": longitude, // Envoyé au PHP
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['status'] == 'success';
+      }
+      return false;
+    } catch (e) {
+      print("Erreur createSession: $e");
+      return false;
+    }
   }
 
-  Future<bool> updateSession(int idUser, int idSession, int idFormation, String typeSession, String lieu, String dateDebut, String dateFin) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/update_session.php"),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({
-        "id_user": idUser,
-        "id_session": idSession,
-        "id_formation": idFormation,
-        "type_session": typeSession,
-        "lieu": lieu,
-        "dateDebut": dateDebut,
-        "dateFin": dateFin,
-      }),
-    );
-    final data = json.decode(response.body);
-    return data['status'] == 'success';
+  Future<bool> updateSession(
+      int idUser,
+      int idSession,
+      int idFormation,
+      String typeSession,
+      String lieu,
+      String dateDebut,
+      String dateFin,
+      double latitude, // Ajouté
+      double longitude // Ajouté
+      ) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/update_session.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "id_user": idUser,
+          "id_session": idSession,
+          "id_formation": idFormation,
+          "type_session": typeSession,
+          "lieu": lieu,
+          "dateDebut": dateDebut,
+          "dateFin": dateFin,
+          "latitude": latitude,   // Nouveau
+          "longitude": longitude, // Nouveau
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['status'] == 'success';
+      }
+      return false;
+    } catch (e) {
+      print("Erreur updateSession: $e");
+      return false;
+    }
   }
 
   Future<bool> deleteSession(int idUser, int idSession) async {
