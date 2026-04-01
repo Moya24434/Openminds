@@ -3,6 +3,7 @@ import 'admin_formations_page.dart';
 import 'create_session_page.dart';
 import 'admin_stats_page.dart';
 import 'admin_users_list_page.dart';
+import 'create_quiz_page.dart'; // <-- 1. J'ai ajouté l'import de ta page Quiz
 
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
@@ -49,7 +50,7 @@ class AdminDashboardPage extends StatelessWidget {
                     "Formations",
                     "Créer et gérer le catalogue",
                     Colors.orange,
-                    () => Navigator.push(
+                        () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AdminFormationsPage(),
@@ -65,7 +66,7 @@ class AdminDashboardPage extends StatelessWidget {
                     "Utilisateurs",
                     "Gérer les membres et comptes bénévoles",
                     Colors.blue,
-                    () => Navigator.push(
+                        () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AdminUsersListPage(),
@@ -81,10 +82,26 @@ class AdminDashboardPage extends StatelessWidget {
                     "Sessions",
                     "Planifier des dates de session",
                     Colors.green,
-                    () => Navigator.push(
+                        () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const CreateSessionPage(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  // --- QUIZ (NOUVEAU) ---
+                  _buildAdminCard(
+                    context,
+                    Icons.quiz, // L'icône pour le quiz
+                    "Quiz",
+                    "Créer et évaluer les connaissances",
+                    Colors.teal, // J'ai choisi bleu canard, mais tu peux mettre Colors.red si tu préfères !
+                        () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateQuizPage(), // <-- 2. Lien vers ta page
                       ),
                     ),
                   ),
@@ -97,7 +114,7 @@ class AdminDashboardPage extends StatelessWidget {
                     "Statistiques",
                     "Participation, progression, réussite",
                     Colors.purple,
-                    () => Navigator.push(
+                        () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AdminStatsPage(),
@@ -114,20 +131,20 @@ class AdminDashboardPage extends StatelessWidget {
   }
 
   Widget _buildAdminCard(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-    VoidCallback onTap,
-  ) {
+      BuildContext context,
+      IconData icon,
+      String title,
+      String subtitle,
+      Color color,
+      VoidCallback onTap,
+      ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
       shadowColor: Colors.black12,
       child: ListTile(
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -145,7 +162,7 @@ class AdminDashboardPage extends StatelessWidget {
           style: const TextStyle(color: Colors.grey, fontSize: 13),
         ),
         trailing:
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: onTap,
       ),
     );

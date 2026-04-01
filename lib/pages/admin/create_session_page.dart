@@ -255,161 +255,161 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
       body: _isLoadingFormations
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF004AAD)))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Planifier une session",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF004AAD)),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      "Définissez les détails de la nouvelle session de formation.",
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    const SizedBox(height: 30),
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Planifier une session",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF004AAD)),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                "Définissez les détails de la nouvelle session de formation.",
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+              const SizedBox(height: 30),
 
-                    // --- Formation associée ---
-                    _buildLabel("Formation associée"),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<Formation>(
-                          value: _selectedFormation,
-                          isExpanded: true,
-                          hint: const Text("Sélectionner une formation"),
-                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF004AAD)),
-                          items: _formations.map((Formation f) {
-                            return DropdownMenuItem<Formation>(
-                              value: f,
-                              child: Text(f.titre, overflow: TextOverflow.ellipsis),
-                            );
-                          }).toList(),
-                          onChanged: (Formation? newValue) {
-                            setState(() => _selectedFormation = newValue);
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // --- Date et Heure de DÉBUT ---
-                    _buildLabel("Date et heure de début"),
-                    const SizedBox(height: 8),
-                    _buildDateTimeRow(
-                      date: _selectedDateDebut,
-                      time: _selectedTimeDebut,
-                      onPickDate: () => _pickDate(isDebut: true),
-                      onPickTime: () => _pickTime(isDebut: true),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // --- Date et Heure de FIN ---
-                    _buildLabel("Date et heure de fin"),
-                    const SizedBox(height: 8),
-                    _buildDateTimeRow(
-                      date: _selectedDateFin,
-                      time: _selectedTimeFin,
-                      onPickDate: () => _pickDate(isDebut: false),
-                      onPickTime: () => _pickTime(isDebut: false),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // --- Type de session ---
-                    _buildLabel("Type de session"),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: ['Présentiel', 'En ligne'].map((type) {
-                        final isSelected = _selectedType == type;
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedType = type),
-                            child: Container(
-                              margin: EdgeInsets.only(
-                                  right: type == 'Présentiel' ? 5 : 0,
-                                  left: type == 'En ligne' ? 5 : 0),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF004AAD) : Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: isSelected ? const Color(0xFF004AAD) : Colors.grey[300]!,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    type == 'Présentiel' ? Icons.location_on : Icons.laptop_chromebook,
-                                    size: 18,
-                                    color: isSelected ? Colors.white : Colors.grey,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    type,
-                                    style: TextStyle(
-                                      color: isSelected ? Colors.white : Colors.black87,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 25),
-
-                    // --- Lieu ---
-                    _buildLabel("Lieu / Lien de réunion"),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _lieuController,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return "Le lieu est obligatoire";
-                        }
-                        return null;
-                      },
-                      decoration: _inputDecoration("Ex: Paris ou Lien Zoom"),
-                    ),
-                    const SizedBox(height: 40),
-
-                    // --- Bouton Enregistrer ---
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF004AAD),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          elevation: 5,
-                        ),
-                        onPressed: _isLoading ? null : _submitSession,
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text(
-                                "PLANIFIER LA SESSION",
-                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
+              // --- Formation associée ---
+              _buildLabel("Formation associée"),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<Formation>(
+                    value: _selectedFormation,
+                    isExpanded: true,
+                    hint: const Text("Sélectionner une formation"),
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF004AAD)),
+                    items: _formations.map((Formation f) {
+                      return DropdownMenuItem<Formation>(
+                        value: f,
+                        child: Text(f.titre, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (Formation? newValue) {
+                      setState(() => _selectedFormation = newValue);
+                    },
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
+
+              // --- Date et Heure de DÉBUT ---
+              _buildLabel("Date et heure de début"),
+              const SizedBox(height: 8),
+              _buildDateTimeRow(
+                date: _selectedDateDebut,
+                time: _selectedTimeDebut,
+                onPickDate: () => _pickDate(isDebut: true),
+                onPickTime: () => _pickTime(isDebut: true),
+              ),
+              const SizedBox(height: 20),
+
+              // --- Date et Heure de FIN ---
+              _buildLabel("Date et heure de fin"),
+              const SizedBox(height: 8),
+              _buildDateTimeRow(
+                date: _selectedDateFin,
+                time: _selectedTimeFin,
+                onPickDate: () => _pickDate(isDebut: false),
+                onPickTime: () => _pickTime(isDebut: false),
+              ),
+              const SizedBox(height: 20),
+
+              // --- Type de session ---
+              _buildLabel("Type de session"),
+              const SizedBox(height: 8),
+              Row(
+                children: ['Présentiel', 'En ligne'].map((type) {
+                  final isSelected = _selectedType == type;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedType = type),
+                      child: Container(
+                        margin: EdgeInsets.only(
+                            right: type == 'Présentiel' ? 5 : 0,
+                            left: type == 'En ligne' ? 5 : 0),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF004AAD) : Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF004AAD) : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              type == 'Présentiel' ? Icons.location_on : Icons.laptop_chromebook,
+                              size: 18,
+                              color: isSelected ? Colors.white : Colors.grey,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              type,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.black87,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 25),
+
+              // --- Lieu ---
+              _buildLabel("Lieu / Lien de réunion"),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _lieuController,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Le lieu est obligatoire";
+                  }
+                  return null;
+                },
+                decoration: _inputDecoration("Ex: Paris ou Lien Zoom"),
+              ),
+              const SizedBox(height: 40),
+
+              // --- Bouton Enregistrer ---
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF004AAD),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    elevation: 5,
+                  ),
+                  onPressed: _isLoading ? null : _submitSession,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    "PLANIFIER LA SESSION",
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

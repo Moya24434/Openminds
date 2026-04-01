@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../models/formation_model.dart';
 import '../../models/session_model.dart';
 import '../../services/admin_service.dart';
@@ -6,6 +8,8 @@ import '../../services/user_prefs.dart';
 import 'edit_formation_page.dart';
 import 'edit_session_page.dart';
 import 'create_session_page.dart';
+import 'create_quiz_page.dart';
+import 'edit_quiz_page.dart'; // <-- J'ai ajouté l'importation de la nouvelle page ici
 
 class AdminFormationDetailsPage extends StatefulWidget {
   final Formation formation;
@@ -19,8 +23,13 @@ class AdminFormationDetailsPage extends StatefulWidget {
 class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
   final AdminService _adminService = AdminService();
   late Formation _currentFormation;
+
   bool _isLoadingSessions = true;
   List<Session> _sessions = [];
+
+  bool _isLoadingQuiz = true;
+  List<dynamic> _quizQuestions = [];
+
   int? _adminId;
 
   @override
@@ -33,22 +42,86 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
   Future<void> _initializeData() async {
     _adminId = await UserPrefs.getUserId();
     _loadSessions();
+    _loadQuiz();
   }
 
   Future<void> _loadSessions() async {
     if (_adminId == null) return;
-    
+
     setState(() => _isLoadingSessions = true);
-    
-    // On récupère toutes les sessions puis on filtre pour cette formation
+
     final allSessions = await _adminService.getAllSessions(_adminId!);
     final relatedSessions = allSessions.where((s) => s.formation?.idFormation == _currentFormation.idFormation).toList();
-    
+
     if (mounted) {
       setState(() {
         _sessions = relatedSessions;
         _isLoadingSessions = false;
       });
+    }
+  }
+
+  Future<void> _loadQuiz() async {
+    setState(() => _isLoadingQuiz = true);
+
+    try {
+      final url = Uri.parse("http://10.0.2.2/openminds_api/get_quiz_formation.php?id_formation=${_currentFormation.idFormation}");
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'success') {
+          if (mounted) {
+            setState(() {
+              _quizQuestions = data['questions'];
+              _isLoadingQuiz = false;
+            });
+          }
+        } else {
+          throw Exception(data['message']);
+        }
+      } else {
+        throw Exception("Erreur serveur HTTP");
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingQuiz = false);
+        print("Erreur Quiz: $e");
+      }
+    }
+  }
+
+  Future<void> _deleteQuiz() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Supprimer le quiz ?"),
+        content: const Text("Voulez-vous vraiment supprimer tout le QCM de cette formation ?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Supprimer"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final url = Uri.parse("http://10.0.2.2/openminds_api/delete_quiz_formation.php?id_formation=${_currentFormation.idFormation}");
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Quiz supprimé avec succès"), backgroundColor: Colors.green));
+        _loadQuiz();
+      } else {
+        throw Exception("Erreur serveur");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erreur lors de la suppression"), backgroundColor: Colors.red));
     }
   }
 
@@ -59,8 +132,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
     );
 
     if (result == true) {
-      // Si on revient de la modification, on dit au screen précédent qu'on a modifié quelque chose
-      Navigator.pop(context, true); 
+      Navigator.pop(context, true);
     }
   }
 
@@ -74,7 +146,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true), 
+            onPressed: () => Navigator.pop(context, true),
             child: const Text("Supprimer"),
           ),
         ],
@@ -88,7 +160,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Formation supprimée avec succès"), backgroundColor: Colors.green));
-      Navigator.pop(context, true); // True to refresh parent
+      Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erreur lors de la suppression"), backgroundColor: Colors.red));
     }
@@ -100,7 +172,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
       MaterialPageRoute(builder: (context) => EditSessionPage(session: session)),
     );
     if (result == true) {
-      _loadSessions(); // Refresh sessions
+      _loadSessions();
     }
   }
 
@@ -114,7 +186,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true), 
+            onPressed: () => Navigator.pop(context, true),
             child: const Text("Supprimer"),
           ),
         ],
@@ -128,7 +200,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Session supprimée avec succès"), backgroundColor: Colors.green));
-      _loadSessions(); // Refresh sessions
+      _loadSessions();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erreur lors de la suppression"), backgroundColor: Colors.red));
     }
@@ -153,7 +225,6 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Details Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -188,7 +259,6 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
             ),
             const SizedBox(height: 30),
 
-            // Sessions Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -197,8 +267,8 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
                   onPressed: () async {
                     await Navigator.push(context, MaterialPageRoute(builder: (context) => CreateSessionPage(preselectedFormation: _currentFormation)));
                     _loadSessions();
-                  }, 
-                  icon: const Icon(Icons.add, size: 18), 
+                  },
+                  icon: const Icon(Icons.add, size: 18),
                   label: const Text("Ajouter"),
                   style: TextButton.styleFrom(foregroundColor: const Color(0xFF004AAD)),
                 ),
@@ -206,7 +276,6 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
             ),
             const SizedBox(height: 15),
 
-            // Sessions List
             if (_isLoadingSessions)
               const Center(child: CircularProgressIndicator(color: Color(0xFF004AAD)))
             else if (_sessions.isEmpty)
@@ -230,7 +299,6 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
                 separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final session = _sessions[index];
-                  // Affichage de la session
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -257,7 +325,6 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
                             ],
                           ),
                         ),
-                        // Action Buttons
                         Row(
                           children: [
                             IconButton(
@@ -279,7 +346,122 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
                   );
                 },
               ),
-            const SizedBox(height: 30),
+
+            const SizedBox(height: 40),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Quiz d'évaluation", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004AAD))),
+                if (_quizQuestions.isEmpty && !_isLoadingQuiz)
+                  TextButton.icon(
+                    onPressed: () async {
+                      await Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateQuizPage()));
+                      _loadQuiz();
+                    },
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text("Créer QCM"),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF004AAD)),
+                  )
+                else if (_quizQuestions.isNotEmpty && !_isLoadingQuiz)
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Color(0xFF004AAD)),
+                        onPressed: () async {
+                          // <-- C'EST ICI QUE TOUT SE PASSE !
+                          // On navigue vers EditQuizPage et on lui passe les questions existantes
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditQuizPage(
+                                formationId: _currentFormation.idFormation,
+                                existingQuestions: _quizQuestions,
+                              ),
+                            ),
+                          );
+                          _loadQuiz(); // On recharge les questions quand on revient
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: _deleteQuiz,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 15),
+
+            if (_isLoadingQuiz)
+              const Center(child: CircularProgressIndicator(color: Color(0xFF004AAD)))
+            else if (_quizQuestions.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey[300]!)),
+                child: const Column(
+                  children: [
+                    Icon(Icons.quiz_outlined, size: 50, color: Colors.grey),
+                    SizedBox(height: 10),
+                    Text("Aucun quiz associé à cette formation.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _quizQuestions.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 15),
+                itemBuilder: (context, index) {
+                  final question = _quizQuestions[index];
+                  final List<dynamic> options = question['options'] ?? [];
+
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: const Color(0xFF004AAD).withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Q${index + 1}: ${question['question_text']}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 10),
+                        ...options.map((opt) {
+                          bool isCorrect = (opt['is_correct'] == 1 || opt['is_correct'] == "1");
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isCorrect ? Icons.check_circle : Icons.radio_button_unchecked,
+                                  color: isCorrect ? Colors.green : Colors.grey,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    opt['option_text'] ?? '',
+                                    style: TextStyle(
+                                      color: isCorrect ? Colors.green.shade700 : Colors.black87,
+                                      fontWeight: isCorrect ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
