@@ -321,7 +321,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildFormationListItem(Session session) {
-    String dateAffichee = "${session.dateSession.day}/${session.dateSession.month}/${session.dateSession.year}";
+      String dateAffichee = "${session.dateDebut.day}/${session.dateDebut.month}/${session.dateDebut.year}";
     final typeLower = session.typeSession.toLowerCase();
     final isOnline = typeLower.contains("ligne") || typeLower.contains("distanciel") || typeLower.contains("visio");
 

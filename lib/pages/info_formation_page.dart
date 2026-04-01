@@ -87,7 +87,7 @@ class _InfoFormationPageState extends State<InfoFormationPage> {
   @override
   Widget build(BuildContext context) {
     // Formatage de la date de la session
-    String dateAffichee = "${widget.session.dateSession.day}/${widget.session.dateSession.month}/${widget.session.dateSession.year}";
+    String dateAffichee = "${widget.session.dateDebut.day}/${widget.session.dateDebut.month}/${widget.session.dateDebut.year}";
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
