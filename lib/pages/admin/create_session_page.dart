@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/formation_model.dart';
 import '../../services/admin_service.dart';
 import '../../services/user_prefs.dart';
-import 'package:geocoding/geocoding.dart';
+import "package:geocoding/geocoding.dart";
 
 class CreateSessionPage extends StatefulWidget {
   final Formation? preselectedFormation;
@@ -40,7 +40,7 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
 
   Future<void> _loadFormations() async {
     final formationsBrutes = await _adminService.getFormations();
-    
+
     // 1. Filtrer les doublons potentiels renvoyés par l'API (basé sur idFormation)
     final Map<int, Formation> formationsUniques = {};
     for (var f in formationsBrutes) {
@@ -51,8 +51,8 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
     if (mounted) {
       setState(() {
         _formations = formations;
-        
-        // 2. Si on a une formation présélectionnée, on s'assure qu'elle pointe 
+
+        // 2. Si on a une formation présélectionnée, on s'assure qu'elle pointe
         // vers la véritable instance présente dans la liste nouvellement téléchargée.
         if (_selectedFormation != null) {
           final found = _formations.where((f) => f.idFormation == _selectedFormation!.idFormation).toList();
@@ -60,10 +60,10 @@ class _CreateSessionPageState extends State<CreateSessionPage> {
             _selectedFormation = found.first;
           } else {
             // Si la formation a été supprimée entre temps, on reset
-            _selectedFormation = null; 
+            _selectedFormation = null;
           }
         }
-        
+
         _isLoadingFormations = false;
       });
     }

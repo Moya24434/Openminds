@@ -263,4 +263,24 @@ class AdminService {
     return data['status'] == 'success';
   }
 
+  // ───────────── QUIZ ─────────────
+
+  Future<bool> createQuiz(int idFormation, List<Map<String, dynamic>> questions) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/create_quiz.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "id_formation": idFormation,
+          "questions": questions,
+        }),
+      );
+      final data = json.decode(response.body);
+      return data['status'] == 'success';
+    } catch (e) {
+      print("Erreur createQuiz : $e");
+      return false;
+    }
+  }
+
 }
