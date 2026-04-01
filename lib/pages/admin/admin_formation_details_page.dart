@@ -313,7 +313,7 @@ class _AdminFormationDetailsPageState extends State<AdminFormationDetailsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(session.dateSession.toString().substring(0, 16), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                              Text(session.dateDebut.toString().substring(0, 16), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                               const SizedBox(height: 5),
                               Row(
                                 children: [

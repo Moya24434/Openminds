@@ -70,7 +70,7 @@ class MySessionsPage extends StatelessWidget {
 
   // Le widget qui reproduit exactement ta maquette !
   Widget _buildFormationCard(BuildContext context, Session session) {
-    String dateAffichee = "${session.dateSession.day}/${session.dateSession.month}/${session.dateSession.year}";
+    String dateAffichee = "${session.dateDebut.day}/${session.dateDebut.month}/${session.dateDebut.year}";
 
     return Container(
       padding: const EdgeInsets.all(10), // Même padding que SearchPage

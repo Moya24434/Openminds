@@ -153,7 +153,8 @@ INSERT INTO `resultats` (`id_res`, `id_user`, `id_formation`, `score`, `date_pas
 CREATE TABLE `sessions` (
   `id_session` int(11) NOT NULL,
   `id_formation` int(11) DEFAULT NULL,
-  `date_session` datetime NOT NULL,
+  `date_debut` datetime NOT NULL,
+  `date_fin` datetime NOT NULL,
   `type_session` enum('Présentiel','En ligne') DEFAULT NULL,
   `lieu` varchar(255) DEFAULT NULL,
   `latitude` decimal(10,8) DEFAULT NULL,
@@ -164,9 +165,9 @@ CREATE TABLE `sessions` (
 -- Déchargement des données de la table `sessions`
 --
 
-INSERT INTO `sessions` (`id_session`, `id_formation`, `date_session`, `type_session`, `lieu`, `latitude`, `longitude`) VALUES
-(1, 1, '2026-04-15 09:00:00', 'Présentiel', '23 rue de la sablière, 93000 Bobigny', 48.90860000, 2.43970000),
-(2, 2, '2026-04-20 18:30:00', 'En ligne', 'Visioconférence Zoom', NULL, NULL);
+IINSERT INTO `sessions` (`id_session`, `id_formation`, `date_debut`, `date_fin`, `type_session`, `lieu`, `latitude`, `longitude`) VALUES
+ (1, 1, '2026-04-15 09:00:00', '2026-04-15 17:00:00', 'Présentiel', '23 rue de la sablière, 93000 Bobigny', 48.90860000, 2.43970000),
+ (2, 2, '2026-04-20 18:30:00', '2026-04-20 20:30:00', 'En ligne', 'Visioconférence Zoom', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -323,6 +324,63 @@ ALTER TABLE `resultats`
 --
 ALTER TABLE `sessions`
   ADD CONSTRAINT `fk_session_formation` FOREIGN KEY (`id_formation`) REFERENCES `formations` (`id_formation`) ON DELETE CASCADE;
+
+
+DELIMITER //
+CREATE TRIGGER chk_password_before_insert
+BEFORE INSERT ON utilisateurs
+FOR EACH ROW
+BEGIN
+  IF CHAR_LENGTH(NEW.password) < 6 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Le mot de passe doit contenir au moins 6 caractères';
+  END IF;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER chk_email_before_insert
+BEFORE INSERT ON utilisateurs
+FOR EACH ROW
+BEGIN
+  IF NEW.email NOT REGEXP '@(gmail\\.com|gmail\\.fr|yahoo\\.com|yahoo\\.fr|outlook\\.com|hotmail\\.com)$' THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Domaine email non autorisé';
+  END IF;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER chk_dates_before_insert
+BEFORE INSERT ON sessions
+FOR EACH ROW
+BEGIN
+  IF NEW.date_fin <= NEW.date_debut THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'La date de fin doit être strictement supérieure à la date de début';
+  END IF;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER chk_dates_before_update
+BEFORE UPDATE ON sessions
+FOR EACH ROW
+BEGIN
+  IF NEW.date_fin <= NEW.date_debut THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'La date de fin doit être strictement supérieure à la date de début';
+  END IF;
+END;
+//
+DELIMITER ;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

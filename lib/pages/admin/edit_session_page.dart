@@ -31,11 +31,14 @@ class _EditSessionPageState extends State<EditSessionPage> {
     super.initState();
     _lieuController = TextEditingController(text: widget.session.adresse);
     _selectedType = widget.session.typeSession;
-    _selectedDateDebut = widget.session.dateSession;
-    _selectedTimeDebut = TimeOfDay(hour: widget.session.dateSession.hour, minute: widget.session.dateSession.minute);
-    
+    _selectedDateDebut = widget.session.dateDebut;
+    _selectedDateFin = widget.session.dateFin;
+    _selectedTimeDebut = TimeOfDay(hour: widget.session.dateDebut.hour, minute: widget.session.dateDebut.minute);
+    _selectedTimeFin = TimeOfDay(hour: widget.session.dateFin.hour, minute: widget.session.dateFin.minute);
+
+
     // Default Fin to +2 hour if not available
-    final finDate = widget.session.dateSession.add(const Duration(hours: 2));
+    final finDate = widget.session.dateFin.add(const Duration(hours: 2));
     _selectedDateFin = finDate;
     _selectedTimeFin = TimeOfDay(hour: finDate.hour, minute: finDate.minute);
   }
