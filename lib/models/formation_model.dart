@@ -22,4 +22,14 @@ class Formation {
       imageUrl: json['image_url'], // 3. On fait le lien avec le nom exact renvoyé par le PHP
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Formation &&
+          runtimeType == other.runtimeType &&
+          idFormation == other.idFormation;
+
+  @override
+  int get hashCode => idFormation.hashCode;
 }

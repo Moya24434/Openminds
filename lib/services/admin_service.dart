@@ -60,11 +60,20 @@ class AdminService {
       );
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        if (jsonData['status'] == 'success') {
-          return (jsonData['data'] as List)
-              .map((item) => Formation.fromJson(item))
-              .toList();
+        final data = json.decode(response.body);
+        
+        if (data is Map<String, dynamic> && data['status'] == 'success') {
+          // Si on utilise "data" : []
+          if (data.containsKey('data')) {
+            return (data['data'] as List).map((item) => Formation.fromJson(item)).toList();
+          } 
+          // Si on utilise "formations" : []
+          else if (data.containsKey('formations')) {
+            return (data['formations'] as List).map((f) => Formation.fromJson(f)).toList();
+          }
+        } else if (data is List) {
+          // Si c'est directement un Array PHP sans statut
+          return data.map((item) => Formation.fromJson(item)).toList();
         }
       }
       return [];
@@ -74,60 +83,83 @@ class AdminService {
   }
 
   Future<List<Formation>> getAllFormations(int idUser) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/get_formations_admin.php"),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({"id_user": idUser}),
-    );
-    final data = json.decode(response.body);
-    if (data['status'] == 'success') {
-      return (data['formations'] as List).map((f) => Formation.fromJson(f)).toList();
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/get_formations_admin.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({"id_user": idUser}),
+      );
+      final data = json.decode(response.body);
+      
+      if (data is Map<String, dynamic> && data['status'] == 'success') {
+        return (data['formations'] as List).map((f) => Formation.fromJson(f)).toList();
+      } else if (data is List) {
+        return data.map((f) => Formation.fromJson(f)).toList();
+      }
+      return [];
+    } catch (e) {
+      print("Erreur getAllFormations Admin : $e");
+      return [];
     }
-    return [];
   }
 
   // --- US15 : CRÉER UNE FORMATION ---
   Future<bool> createFormation(int idUser, String titre, String description, String thematique, String? imageUrl) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/create_formation.php"),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({
-        "id_user": idUser,
-        "titre": titre,
-        "description": description,
-        "thematique": thematique,
-        "image_url": imageUrl,
-      }),
-    );
-    final data = json.decode(response.body);
-    return data['status'] == 'success';
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/create_formation.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "id_user": idUser,
+          "titre": titre,
+          "description": description,
+          "thematique": thematique,
+          "image_url": imageUrl,
+        }),
+      );
+      final data = json.decode(response.body);
+      return data['status'] == 'success';
+    } catch (e) {
+      print("Erreur lors de la création de la formation : $e");
+      return false; // Permet à l'application de ne pas charger indéfiniment
+    }
   }
 
   Future<bool> updateFormation(int idUser, int idFormation, String titre, String description, String thematique, String? imageUrl) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/update_formation.php"),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({
-        "id_user": idUser,
-        "id_formation": idFormation,
-        "titre": titre,
-        "description": description,
-        "thematique": thematique,
-        "image_url": imageUrl,
-      }),
-    );
-    final data = json.decode(response.body);
-    return data['status'] == 'success';
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/update_formation.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "id_user": idUser,
+          "id_formation": idFormation,
+          "titre": titre,
+          "description": description,
+          "thematique": thematique,
+          "image_url": imageUrl,
+        }),
+      );
+      final data = json.decode(response.body);
+      return data['status'] == 'success';
+    } catch (e) {
+      print("Erreur updateFormation : $e");
+      return false;
+    }
   }
 
   Future<bool> deleteFormation(int idUser, int idFormation) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/delete_formation.php"),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({"id_user": idUser, "id_formation": idFormation}),
-    );
-    final data = json.decode(response.body);
-    return data['status'] == 'success';
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/delete_formation.php"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({"id_user": idUser, "id_formation": idFormation}),
+      );
+      final data = json.decode(response.body);
+      return data['status'] == 'success';
+    } catch (e) {
+      print("Erreur deleteFormation : $e");
+      return false;
+    }
   }
 
   // ───────────── SESSIONS ─────────────
