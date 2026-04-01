@@ -7,6 +7,24 @@ import '../models/session_model.dart';
 class AdminService {
   static const String baseUrl = "http://10.0.2.2/openminds_api";
 
+  // --- US17 : RÉCUPÉRER LES STATISTIQUES GLOBALES ---
+  Future<Map<String, dynamic>> getAdminStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/get_admin_stats.php"),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return {"status": "error", "message": "Erreur serveur"};
+    } catch (e) {
+      return {"status": "error", "message": "Erreur de connexion : $e"};
+    }
+  }
+
+
+
   // ───────────── UTILISATEURS ─────────────
 
   Future<List<UserModel>> getAllUsers(int idUser) async {
@@ -34,9 +52,30 @@ class AdminService {
 
   // ───────────── FORMATIONS ─────────────
 
+  // --- US15 : RÉCUPÉRER TOUTES LES FORMATIONS (pour les dropdowns) ---
+  Future<List<Formation>> getFormations() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/get_formations.php"),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['status'] == 'success') {
+          return (jsonData['data'] as List)
+              .map((item) => Formation.fromJson(item))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   Future<List<Formation>> getAllFormations(int idUser) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/get_all_formations_admin.php"),
+      Uri.parse("$baseUrl/get_formations_admin.php"),
       headers: {"Content-Type": "application/json"},
       body: json.encode({"id_user": idUser}),
     );
@@ -47,6 +86,7 @@ class AdminService {
     return [];
   }
 
+  // --- US15 : CRÉER UNE FORMATION ---
   Future<bool> createFormation(int idUser, String titre, String description, String thematique, String? imageUrl) async {
     final response = await http.post(
       Uri.parse("$baseUrl/create_formation.php"),
@@ -94,7 +134,7 @@ class AdminService {
 
   Future<List<Session>> getAllSessions(int idUser) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/get_all_sessions_admin.php"),
+      Uri.parse("$baseUrl/get_sessions_admin.php"),
       headers: {"Content-Type": "application/json"},
       body: json.encode({"id_user": idUser}),
     );
